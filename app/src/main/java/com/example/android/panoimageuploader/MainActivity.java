@@ -66,7 +66,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private int PermissionRequest = 1;
     private int IntentRequest = 2;
     private Bitmap bitmap;
-    private ImageView imageView;
+    private ImageView imageViews[];
+
 
     private static final String TAG = "MainActivity";
 
@@ -93,7 +94,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         tv = (TextView) findViewById(R.id.mainTextView);
         imageSendProgressBar = (ProgressBar) findViewById(R.id.sendingImageLoadingBar);
-        imageView = (ImageView) findViewById(R.id.imageView);
+        imageViews = new ImageView[3];
+        imageViews[0] = (ImageView) findViewById(R.id.imageView1);
+        imageViews[1] = (ImageView) findViewById(R.id.imageView2);
+        imageViews[2] = (ImageView) findViewById(R.id.imageView3);
     }
 
     @Override
@@ -179,14 +183,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         Log.e(TAG, path);
 
                         imageUris.add(Uri.parse(path));
-
-                        try {
-                            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                            imageView.setImageBitmap(bitmap);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Log.e(TAG, "Image cannot be found");
+                        if (i>=0 && i <=2) {
+                            try {
+                                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                                imageViews[i].setImageBitmap(bitmap);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                Log.e(TAG, "Image cannot be found");
+                            }
                         }
+
                     }
 
 
@@ -202,10 +208,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     Log.e(TAG, path);
 
                     imageUris.add(Uri.parse(path));
-
                     try {
                         bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imagePath);
-                        imageView.setImageBitmap(bitmap);
+                        imageViews[0].setImageBitmap(bitmap);
                     } catch (Exception e) {
                         e.printStackTrace();
                         Log.e(TAG, "Image cannot be found");
