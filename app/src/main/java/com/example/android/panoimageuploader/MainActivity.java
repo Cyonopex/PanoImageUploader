@@ -6,7 +6,9 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.Network;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -24,6 +26,7 @@ import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
 
 import android.provider.MediaStore;
+import android.provider.SyncStateContract;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -31,6 +34,10 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import net.gotev.uploadservice.data.UploadNotificationConfig;
+import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -161,19 +168,41 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                     //   Log.e(TAG, "MultiImage URI = " + imageUri.toString());
                     //   imageUris.add(imageUri);
+                    int count = data.getClipData().getItemCount();
+                    for (int i=0; i < count; i++) {
+                        ClipData.Item item = data.getClipData().getItemAt(i);
 
-                    ClipData.Item item = data.getClipData().getItemAt(0);
+                        Uri uri = item.getUri();
+                        Log.e(TAG, "MultiImage URI = " + uri.toString());
 
-                    Uri uri = item.getUri();
-                    Log.e(TAG, "MultiImage URI = " + uri.toString());
-                    imageUris.add(uri);
+                        String path = getPath(uri);
+                        Log.e(TAG, path);
+
+                        imageUris.add(Uri.parse(path));
+
+                        try {
+                            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                            imageView.setImageBitmap(bitmap);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Log.e(TAG, "Image cannot be found");
+                        }
+                    }
+
+
+
+
 
 
                 } else if(data.getData() != null) {
                     Uri imagePath = data.getData();
 
                     Log.e(TAG, "Single Image URI = " + imagePath.toString());
-                    imageUris.add(imagePath);
+                    String path = getPath(imagePath);
+                    Log.e(TAG, path);
+
+                    imageUris.add(Uri.parse(path));
+
                     try {
                         bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imagePath);
                         imageView.setImageBitmap(bitmap);
@@ -188,101 +217,62 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                 Log.e(TAG, "No data found");
             }
-            //ArrayList<String> uristr = new ArrayList<>();
-            //for (Uri uri : imageUris) {
-            //    uristr.add(uri.toString());
-            //}
 
-            //Bundle images = new Bundle();
-            //images.putStringArrayList(URI_STRING_KEY, uristr);
 
-            //getSupportLoaderManager().initLoader(LOADERID, images, this);
+            //Uri fileUrl = imageUris.get(0);
 
-            Uri fileUrl = imageUris.get(0);
-            Log.e(TAG, "File URL is" + fileUrl);
+            //getPath(imageUris.get(0));
 
-            uploadImages(imageUris);
+            //String path = getPath(fileUrl);
+            //Log.e(TAG, path);
+            uploadImage(imageUris);
         }
     }
 
-    public interface FileUploadService {
+    private void uploadImage(List<Uri> imagePath) {
 
-        @Multipart
-        @POST("YOUR_URL/image_uploader.php")
-        Call<Response> uploadImages( @Part List<MultipartBody.Part> images);
-    }
+        Log.e(TAG, "Uploading to " + NetworkUtils.LOCALHOST);
 
-    public class Response {
-        private String error;
-        private String message;
+        try {
+            MultipartUploadRequest req = new MultipartUploadRequest(this, NetworkUtils.LOCALHOST)
+                    .setMethod("POST")
+                    //.addFileToUpload(imagePath.getPath(), "image")
+                    //.setNotificationConfig(new UploadNotificationConfig())
+                    .setMaxRetries(2);
 
-        public String getError() {
-            return error;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
-    void uploadImages(List<Uri> paths) {
-        Log.e(TAG, "point 1");
-        List<MultipartBody.Part> list = new ArrayList<>();
-        int i = 0;
-        for (Uri uri : paths) {
-            String fileName = new File(uri.getPath()).getName();
-            //very important files[]
-            MultipartBody.Part imageRequest = prepareFilePart("files[]", uri);
-            list.add(imageRequest);
-        }
-        Log.e(TAG, "point 2");
-        setLoading();
-        Retrofit builder = new Retrofit.Builder().baseUrl(NetworkUtils.LOCALHOST).addConverterFactory(GsonConverterFactory.create()).build();
-        FileUploadService fileUploadService  = builder.create(FileUploadService.class);
-        Call<Response> call = fileUploadService.uploadImages(list);
-        Log.e(TAG, "point 5");
-        call.enqueue(new Callback<Response>() {
-
-            @Override
-            public void onResponse(Call<Response> call, retrofit2.Response<Response> response) {
-                Log.e("main", "the message is ----> " + response.body().getMessage());
-                Log.e("main", "the error is ----> " + response.body().getError());
-                tv.setText(response.body().getMessage());
-                setFinished();
+            for (Uri uri : imagePath) {
+                Log.e(TAG, "Uploading file: " + uri.getPath());
+                req.addFileToUpload(uri.getPath(), "files[]");
             }
 
-            @Override
-            public void onFailure(Call<Response> call, Throwable throwable) {
-                Log.e("main", "on error is called and the error is  ----> " + throwable.getMessage());
-                tv.setText(throwable.getMessage());
-                setFinished();
-            }
-        });
-    }
 
-    @NonNull
-    private MultipartBody.Part prepareFilePart(String partName, Uri fileUri) {
-        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
-        // use the FileUtils to get the actual file by uri
-        File file = new File(fileUri.getPath());
+            req.startUpload();
 
-        if (file == null) {
-            Log.e(TAG, "File is NULL");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Unable to upload file");
+            Toast.makeText(this, "Unable to upload file", Toast.LENGTH_LONG).show();
         }
 
-        Log.e(TAG, "point 3");
-        //compress the image using Compressor lib
-        //Log.d(TAG,"size of image before compression --> " + file.getTotalSpace());
-        //compressedImageFile = new Compressor(this).compressToFile(file);
-        //Log.d(TAG, "size of image after compression --> " + compressedImageFile.getTotalSpace());
-        // create RequestBody instance from file
-        RequestBody requestFile =
-                RequestBody.create(
-                        MediaType.parse(getContentResolver().getType(fileUri)),
-                        file);
-        Log.e(TAG, "point 4");
-        // MultipartBody.Part is used to send also the actual file name
-        return MultipartBody.Part.createFormData(partName, file.getName(), requestFile);
+    }
+
+
+    //method to get the file path from uri
+    public String getPath(Uri uri) {
+        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+        cursor.moveToFirst();
+        String document_id = cursor.getString(0);
+        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
+        cursor.close();
+
+        cursor = getContentResolver().query(
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                null, MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
+        cursor.moveToFirst();
+        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+        cursor.close();
+
+        return path;
     }
 
     public void setLoading() {
@@ -328,7 +318,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 for (String str : uristr) {
                     uris.add(Uri.parse(str));
                 }
-                uploadImages(uris);
+                //uploadImages(uris);
                 return null;
 //                try {
 //                    Uri builtUri = Uri.parse(NetworkUtils.LOCALHOST).buildUpon()

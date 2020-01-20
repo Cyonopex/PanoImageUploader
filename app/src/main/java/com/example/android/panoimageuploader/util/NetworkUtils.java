@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class NetworkUtils {
 
-    public static final String LOCALHOST = "http://192.168.1.64:5000/upload/";
+    public static final String LOCALHOST = "http://192.168.1.64:5000/upload";
 
     public static String getResponseFromHttpUrl(URL url) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
