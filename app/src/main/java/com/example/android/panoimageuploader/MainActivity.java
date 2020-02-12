@@ -3,18 +3,15 @@ package com.example.android.panoimageuploader;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ClipData;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.net.Network;
 import android.net.Uri;
 import android.os.Bundle;
 
 import com.example.android.panoimageuploader.util.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,7 +23,6 @@ import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
 
 import android.provider.MediaStore;
-import android.provider.SyncStateContract;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -36,28 +32,12 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import net.gotev.uploadservice.data.UploadNotificationConfig;
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.Multipart;
-import retrofit2.http.POST;
-import retrofit2.http.Part;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>  {
 
@@ -86,9 +66,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                uploadImage();
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                startImageIntentRequest();
+                //Snackbar.make(view, NetworkUtils.getImagesUri(MainActivity.this).toString(), Snackbar.LENGTH_LONG)
+                //       .setAction("Action", null).show();
             }
         });
 
@@ -116,16 +96,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
+            startActivity(startSettingsActivity);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    public void uploadImage() {
+    public void startImageIntentRequest() {
         try {
-            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, PermissionRequest);
+            if (ActivityCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, PermissionRequest);
             } else {
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 photoPickerIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
@@ -162,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             if(resultCode == Activity.RESULT_OK) {
 
-                Log.e(TAG, "Activity REsult OK");
+                Log.e(TAG, "Activity Result OK");
 
                 if(data.getClipData() != null) {
                     //int count = data.getClipData().getItemCount(); //evaluate the count before the for loop --- otherwise, the count is evaluated every loop.
@@ -195,11 +180,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                     }
 
-
-
-
-
-
                 } else if(data.getData() != null) {
                     Uri imagePath = data.getData();
 
@@ -215,31 +195,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         e.printStackTrace();
                         Log.e(TAG, "Image cannot be found");
                     }
-
                 }
-
             } else {
-
                 Log.e(TAG, "No data found");
             }
-
-
-            //Uri fileUrl = imageUris.get(0);
-
-            //getPath(imageUris.get(0));
-
-            //String path = getPath(fileUrl);
-            //Log.e(TAG, path);
             uploadImage(imageUris);
         }
     }
 
     private void uploadImage(List<Uri> imagePath) {
 
-        Log.e(TAG, "Uploading to " + NetworkUtils.LOCALHOST);
+        Log.e(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
 
         try {
-            MultipartUploadRequest req = new MultipartUploadRequest(this, NetworkUtils.LOCALHOST)
+            MultipartUploadRequest req = new MultipartUploadRequest(this,
+                    NetworkUtils.getUploadUri(this).toString())
                     .setMethod("POST")
                     //.addFileToUpload(imagePath.getPath(), "image")
                     //.setNotificationConfig(new UploadNotificationConfig())
