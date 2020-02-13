@@ -11,4 +11,8 @@
     <string name="ip_key" translatable="false">uploadUrl</string>
     <string name="ip_default" translatable="false">192.168.43.242:5000</string>
 
+    <string name="uploading">Uploading</string>
+    <string name="processing">Processing</string>
+    <string name="complete">Complete</string>
+
 </resources>

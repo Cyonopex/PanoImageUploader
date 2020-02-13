@@ -10,17 +10,19 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 
+import com.example.android.panoimageuploader.database.ImageDetails;
+import com.example.android.panoimageuploader.util.DataUtils;
 import com.example.android.panoimageuploader.util.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.AsyncTaskLoader;
-import androidx.loader.content.Loader;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.provider.MediaStore;
 import android.util.Log;
@@ -39,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>  {
+public class MainActivity extends AppCompatActivity implements ImageDetailsAdapter.ImageDetailsAdapterOnClickHandler {
 
     private TextView tv;
     private ProgressBar imageSendProgressBar;
@@ -47,6 +49,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private int IntentRequest = 2;
     private Bitmap bitmap;
     private ImageView imageViews[];
+    private RecyclerView mRecyclerView;
+    private ImageDetailsAdapter mAdapter;
+    private List<ImageDetails> dummyData;
 
 
     private static final String TAG = "MainActivity";
@@ -75,9 +80,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         tv = (TextView) findViewById(R.id.mainTextView);
         imageSendProgressBar = (ProgressBar) findViewById(R.id.sendingImageLoadingBar);
         imageViews = new ImageView[3];
-        imageViews[0] = (ImageView) findViewById(R.id.imageView1);
-        imageViews[1] = (ImageView) findViewById(R.id.imageView2);
-        imageViews[2] = (ImageView) findViewById(R.id.imageView3);
+        //imageViews[0] = (ImageView) findViewById(R.id.imageView1);
+        //imageViews[1] = (ImageView) findViewById(R.id.imageView2);
+        //imageViews[2] = (ImageView) findViewById(R.id.imageView3);
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.image_list_rv);
+        LinearLayoutManager layoutManager
+                = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        mRecyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.setHasFixedSize(true);
+        mAdapter = new ImageDetailsAdapter(this);
+        mRecyclerView.setAdapter(mAdapter);
+        //dummyData = DataUtils.getDummyData();
+        //mAdapter.setImageData(dummyData);
+
+        setupViewModel();
     }
 
     @Override
@@ -168,15 +185,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         Log.e(TAG, path);
 
                         imageUris.add(Uri.parse(path));
-                        if (i>=0 && i <=2) {
-                            try {
-                                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                                imageViews[i].setImageBitmap(bitmap);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                Log.e(TAG, "Image cannot be found");
-                            }
-                        }
 
                     }
 
@@ -188,13 +196,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     Log.e(TAG, path);
 
                     imageUris.add(Uri.parse(path));
-                    try {
-                        bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imagePath);
-                        imageViews[0].setImageBitmap(bitmap);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Log.e(TAG, "Image cannot be found");
-                    }
                 }
             } else {
                 Log.e(TAG, "No data found");
@@ -206,6 +207,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private void uploadImage(List<Uri> imagePath) {
 
         Log.e(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
+
+        String fileName = imagePath.get(0).getLastPathSegment();
 
         try {
             MultipartUploadRequest req = new MultipartUploadRequest(this,
@@ -229,6 +232,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             Toast.makeText(this, "Unable to upload file", Toast.LENGTH_LONG).show();
         }
 
+        // Update local DB on new image
+        Log.e(TAG, "@@@@@@@@@@@@@@@@@" + fileName);
     }
 
 
@@ -260,88 +265,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         tv.setVisibility(View.VISIBLE);
     }
 
-    @NonNull
     @Override
-    public Loader<String> onCreateLoader(int id, @Nullable final Bundle args) {
-        return new AsyncTaskLoader<String>(this) {
+    public void onClick(String imageName) {
 
-            String response;
-
-            @Override
-            protected void onStartLoading() {
-                //if (args == null) {
-                //    return;
-                //}
-
-                setLoading();
-
-                if (response != null) {
-                    deliverResult(response);
-                } else {
-
-                    forceLoad();
-                }
-
-            }
-
-            @Nullable
-            @Override
-            public String loadInBackground() {
-                String url = NetworkUtils.LOCALHOST;
-                List<String> uristr = args.getStringArrayList(URI_STRING_KEY);
-                List<Uri> uris = new ArrayList<>();
-                for (String str : uristr) {
-                    uris.add(Uri.parse(str));
-                }
-                //uploadImages(uris);
-                return null;
-//                try {
-//                    Uri builtUri = Uri.parse(NetworkUtils.LOCALHOST).buildUpon()
-//                            .appendPath("test")
-//                            .build();
-//                    URL serverURL = new URL(builtUri.toString());
-//                    String response = NetworkUtils.getResponseFromHttpUrl(serverURL);
-//                    return response;
-//
-//                } catch (MalformedURLException e) {
-//
-//                    e.printStackTrace();
-//                    Log.e(TAG, "URL given is invalid");
-//                    return null;
-//
-//                } catch (IOException e) {
-//
-//                    e.printStackTrace();
-//                    Log.e(TAG, "Unable to connect to server");
-//                    return null;
-//                }
-
-            }
-
-            @Override
-            public void deliverResult(@Nullable String data) {
-                response = data;
-                super.deliverResult(data);
-            }
-        };
     }
 
-    @Override
-    public void onLoadFinished(@NonNull Loader<String> loader, String data) {
+    private void setupViewModel() {
 
-        setFinished();
-        if (data == null) {
-            //show an error message
-            tv.setText("Unable to get response");
-        } else {
+        ImageDetailsViewModel viewModel = ViewModelProviders.of(this)
+                .get(ImageDetailsViewModel.class);
 
-            tv.setText(data);
-
-        }
-    }
-
-    @Override
-    public void onLoaderReset(@NonNull Loader<String> loader) {
+        viewModel.getImageDetails().observe(this, new Observer<List<ImageDetails>>() {
+            @Override
+            public void onChanged(List<ImageDetails> imageDetails) {
+                Log.d(TAG, "Updating image details from LiveData in ViewModel");
+                mAdapter.setImageData(imageDetails);
+            }
+        });
 
     }
 }
