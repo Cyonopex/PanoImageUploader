@@ -17,14 +17,17 @@ public interface ImageDetailsDAO {
     LiveData<List<ImageDetails>> loadAllDetails();
 
     @Insert
-    void insertTask(ImageDetails details);
+    void insertImageDetails(ImageDetails details);
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    void updateTask(ImageDetails details);
+    void updateImageDetails(ImageDetails details);
 
     @Delete
-    void deleteTask(ImageDetails details);
+    void deleteImageDetails(ImageDetails details);
 
     @Query("SELECT * FROM imagedetails WHERE id = :id")
-    LiveData<ImageDetails> loadTaskById(int id);
+    LiveData<ImageDetails> loadImageDetailsById(int id);
+
+    @Query("SELECT * FROM imagedetails WHERE uploadUID = :uploadUID")
+    ImageDetails loadImageDetailsByUid(String uploadUID);
 }

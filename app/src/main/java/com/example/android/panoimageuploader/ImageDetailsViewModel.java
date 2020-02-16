@@ -23,7 +23,7 @@ public class ImageDetailsViewModel extends AndroidViewModel {
 
         AppDatabase db = AppDatabase.getInstance(this.getApplication());
         Log.d(TAG, "Retrieving tasks from Database");
-        imageDetails = db.taskDao().loadAllDetails();
+        imageDetails = db.imageDetailsDao().loadAllDetails();
     }
 
     public LiveData<List<ImageDetails>> getImageDetails() {

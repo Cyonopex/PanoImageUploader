@@ -14,5 +14,6 @@
     <string name="uploading">Uploading</string>
     <string name="processing">Processing</string>
     <string name="complete">Complete</string>
+    <string name="upload_failed">Upload Failed</string>
 
 </resources>

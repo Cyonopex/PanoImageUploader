@@ -10,8 +10,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 
+import com.example.android.panoimageuploader.database.AppDatabase;
 import com.example.android.panoimageuploader.database.ImageDetails;
-import com.example.android.panoimageuploader.util.DataUtils;
 import com.example.android.panoimageuploader.util.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -34,14 +34,21 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
+//import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
+
+import net.gotev.uploadservice.MultipartUploadRequest;
+import net.gotev.uploadservice.UploadNotificationConfig;
+import net.gotev.uploadservice.UploadService;
 
 import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 public class MainActivity extends AppCompatActivity implements ImageDetailsAdapter.ImageDetailsAdapterOnClickHandler {
+
 
     private TextView tv;
     private ProgressBar imageSendProgressBar;
@@ -51,14 +58,8 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     private ImageView imageViews[];
     private RecyclerView mRecyclerView;
     private ImageDetailsAdapter mAdapter;
-    private List<ImageDetails> dummyData;
-
-
     private static final String TAG = "MainActivity";
-
-    private static final int LOADERID = 10;
-
-    private static final String URI_STRING_KEY = "uristring";
+    private AppDatabase mDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         mRecyclerView.setAdapter(mAdapter);
         //dummyData = DataUtils.getDummyData();
         //mAdapter.setImageData(dummyData);
+        mDb = AppDatabase.getInstance(getApplicationContext());
 
         setupViewModel();
     }
@@ -158,13 +160,13 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == IntentRequest) {
 
-            Log.e(TAG, "Intent Request");
+            Log.d(TAG, "User has made Intent Request for photo picker");
 
             ArrayList<Uri> imageUris = new ArrayList<>();
 
             if(resultCode == Activity.RESULT_OK) {
 
-                Log.e(TAG, "Activity Result OK");
+                Log.d(TAG, "Result of photopicker intent Result OK");
 
                 if(data.getClipData() != null) {
                     //int count = data.getClipData().getItemCount(); //evaluate the count before the for loop --- otherwise, the count is evaluated every loop.
@@ -179,10 +181,10 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                         ClipData.Item item = data.getClipData().getItemAt(i);
 
                         Uri uri = item.getUri();
-                        Log.e(TAG, "MultiImage URI = " + uri.toString());
+                        Log.d(TAG, "MultiImage URI = " + uri.toString());
 
                         String path = getPath(uri);
-                        Log.e(TAG, path);
+                        Log.d(TAG, path);
 
                         imageUris.add(Uri.parse(path));
 
@@ -191,16 +193,19 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                 } else if(data.getData() != null) {
                     Uri imagePath = data.getData();
 
-                    Log.e(TAG, "Single Image URI = " + imagePath.toString());
+                    Log.d(TAG, "Single Image URI = " + imagePath.toString());
                     String path = getPath(imagePath);
-                    Log.e(TAG, path);
+                    Log.d(TAG, path);
 
                     imageUris.add(Uri.parse(path));
                 }
             } else {
-                Log.e(TAG, "No data found");
+                Log.d(TAG, "No data found");
             }
-            uploadImage(imageUris);
+            if (imageUris.size() > 0) {
+                uploadImage(imageUris);
+            }
+            //else do nothing if user does not select any files
         }
     }
 
@@ -208,15 +213,17 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
         Log.e(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
 
-        String fileName = imagePath.get(0).getLastPathSegment();
+        final String fileName = imagePath.get(0).getLastPathSegment();
+        final String uploadUuid = UUID.randomUUID().toString(); // Keep track of uploads
 
         try {
-            MultipartUploadRequest req = new MultipartUploadRequest(this,
+            MultipartUploadRequest req = new MultipartUploadRequest(this, uploadUuid,
                     NetworkUtils.getUploadUri(this).toString())
                     .setMethod("POST")
                     //.addFileToUpload(imagePath.getPath(), "image")
                     //.setNotificationConfig(new UploadNotificationConfig())
-                    .setMaxRetries(2);
+                    .setNotificationConfig(new UploadNotificationConfig())
+                    .setMaxRetries(1);
 
             for (Uri uri : imagePath) {
                 Log.e(TAG, "Uploading file: " + uri.getPath());
@@ -230,10 +237,18 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
             e.printStackTrace();
             Log.e(TAG, "Unable to upload file");
             Toast.makeText(this, "Unable to upload file", Toast.LENGTH_LONG).show();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            Log.e(TAG, "URL is malformed or invalid");
         }
 
-        // Update local DB on new image
-        Log.e(TAG, "@@@@@@@@@@@@@@@@@" + fileName);
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                ImageDetails details = new ImageDetails(fileName, ImageDetails.UPLOADING, uploadUuid);
+                mDb.imageDetailsDao().insertImageDetails(details);
+            }
+        });
     }
 
 
@@ -267,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
     @Override
     public void onClick(String imageName) {
-
+        Log.e(TAG, UploadService.NAMESPACE);
     }
 
     private void setupViewModel() {

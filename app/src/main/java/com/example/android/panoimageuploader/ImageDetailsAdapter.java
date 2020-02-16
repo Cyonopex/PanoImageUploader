@@ -68,9 +68,12 @@ public class ImageDetailsAdapter extends RecyclerView.Adapter<ImageDetailsAdapte
                 holder.mStatus.setText(comp);
                 holder.pg.setVisibility(View.INVISIBLE);
                 break;
+            case ImageDetails.UPLOAD_FAILED:
+                String fail = holder.itemView.getContext().getString(R.string.upload_failed);
+                holder.mStatus.setText(fail);
+                holder.pg.setVisibility(View.INVISIBLE);
+                break;
         }
-
-        Log.d(TAG, "file name is set at " + fileName);
     }
 
     @Override

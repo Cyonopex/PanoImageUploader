@@ -6,7 +6,8 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
-import net.gotev.uploadservice.UploadServiceConfig;
+import net.gotev.uploadservice.UploadService;
+//import net.gotev.uploadservice.UploadServiceConfig;
 
 public class PanoApplication extends Application {
 
@@ -26,10 +27,11 @@ public class PanoApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        UploadService.NAMESPACE = BuildConfig.APPLICATION_ID;
         createNotificationChannel();
 
-        UploadServiceConfig.initialize(
-                this, notificationChannelID, BuildConfig.DEBUG
-        );
+        //UploadServiceConfig.initialize(
+        //        this, notificationChannelID, BuildConfig.DEBUG
+        //);
     }
 }
