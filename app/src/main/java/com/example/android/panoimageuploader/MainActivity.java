@@ -5,16 +5,15 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-
-import com.example.android.panoimageuploader.database.AppDatabase;
-import com.example.android.panoimageuploader.database.ImageDetails;
-import com.example.android.panoimageuploader.util.AppExecutors;
-import com.example.android.panoimageuploader.util.NetworkUtils;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,17 +24,12 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.provider.MediaStore;
-import android.util.Log;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
-
-//import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
+import com.example.android.panoimageuploader.database.AppDatabase;
+import com.example.android.panoimageuploader.database.ImageDetails;
+import com.example.android.panoimageuploader.util.AppExecutors;
+import com.example.android.panoimageuploader.util.DataUtils;
+import com.example.android.panoimageuploader.util.NetworkUtils;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
 
@@ -51,13 +45,10 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     private TextView tv;
     private ProgressBar imageSendProgressBar;
     private int PermissionRequest = 1;
-    private int IntentRequest = 2;
     private int pickReqCode = 3;
-    private Bitmap bitmap;
-    private ImageView imageViews[];
     private RecyclerView mRecyclerView;
     private ImageDetailsAdapter mAdapter;
-    private static final String TAG = "MainActivity";
+    private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
     private AppDatabase mDb;
     ImageDetailsViewModel viewModel;
 
@@ -72,29 +63,20 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                viewModel.getImageUpdatesFromServer();
-                //startImageIntentRequest();
-                //Snackbar.make(view, NetworkUtils.getImagesUri(MainActivity.this).toString(), Snackbar.LENGTH_LONG)
-                //       .setAction("Action", null).show();
+                startImageIntentRequest();
             }
         });
 
-        tv = (TextView) findViewById(R.id.mainTextView);
-        imageSendProgressBar = (ProgressBar) findViewById(R.id.sendingImageLoadingBar);
-        imageViews = new ImageView[3];
-        //imageViews[0] = (ImageView) findViewById(R.id.imageView1);
-        //imageViews[1] = (ImageView) findViewById(R.id.imageView2);
-        //imageViews[2] = (ImageView) findViewById(R.id.imageView3);
+        tv = findViewById(R.id.mainTextView);
+        imageSendProgressBar = findViewById(R.id.sendingImageLoadingBar);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.image_list_rv);
+        mRecyclerView = findViewById(R.id.image_list_rv);
         LinearLayoutManager layoutManager
                 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
         mAdapter = new ImageDetailsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
-        //dummyData = DataUtils.getDummyData();
-        //mAdapter.setImageData(dummyData);
         mDb = AppDatabase.getInstance(getApplicationContext());
 
         setupViewModel();
@@ -114,10 +96,13 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
             startActivity(startSettingsActivity);
+            return true;
+
+        } else if (id == R.id.refresh_image_details) {
+            viewModel.getImageUpdatesFromServer();
             return true;
         }
 
@@ -132,10 +117,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE}, PermissionRequest);
             } else {
-                //Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                //photoPickerIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                //photoPickerIntent.setType("image/");
-                //startActivityForResult(photoPickerIntent, IntentRequest);
+
                 pickFile();
 
             }
@@ -157,7 +139,9 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     private void pickFile() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+        intent.putExtra(Intent.CATEGORY_OPENABLE, true);
+
         intent.setType("image/*");
         startActivityForResult(intent, pickReqCode);
     }
@@ -184,19 +168,26 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                         Uri uri = item.getUri();
                         Log.d(TAG, "MultiImage URI = " + uri.toString());
 
-                        String path = getPath(uri);
+                        String path = DataUtils.getFilePath(this, uri);
                         Log.d(TAG, path);
 
                         imageUris.add(Uri.parse(path));
+                        //imageUris.add(uri);
 
                     }
 
                 } else if(data.getData() != null) {
+
+                    Uri uri = data.getData();
+
                     Uri imagePath = data.getData();
 
-                    Log.d(TAG, "Single Image URI = " + imagePath.toString());
-                    String path = getPath(imagePath);
+                    Log.e(TAG, "@@@@@@@@@@@@ Single Image URI = " + imagePath.toString());
+                    //String path = getFilePath(imagePath);
+                    String path = DataUtils.getFilePath(this, imagePath);
                     Log.d(TAG, path);
+
+                    Log.e(TAG, "@@@@@@@@@@@@ After conversion = " + path.toString());
 
                     imageUris.add(Uri.parse(path));
                 }
@@ -249,23 +240,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     }
 
 
-    //method to get the file path from uri
-    public String getPath(Uri uri) {
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        cursor.moveToFirst();
-        String document_id = cursor.getString(0);
-        document_id = document_id.substring(document_id.lastIndexOf(":") + 1);
-        cursor.close();
 
-        cursor = getContentResolver().query(
-                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                null, MediaStore.Images.Media._ID + " = ? ", new String[]{document_id}, null);
-        cursor.moveToFirst();
-        String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
-        cursor.close();
-
-        return path;
-    }
 
     @Override
     public void onClick(String imageName) {

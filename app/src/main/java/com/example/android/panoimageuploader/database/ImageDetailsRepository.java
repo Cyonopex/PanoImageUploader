@@ -6,8 +6,12 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 
 import com.example.android.panoimageuploader.ImageDetailsViewModel;
+import com.example.android.panoimageuploader.util.AppExecutors;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -18,10 +22,11 @@ public class ImageDetailsRepository {
     private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
     private LiveData<List<ImageDetails>> imageDetails;
     private Application application;
+    private AppDatabase db;
 
     public ImageDetailsRepository(Application application) {
         this.application = application;
-        AppDatabase db = AppDatabase.getInstance(application);
+        db = AppDatabase.getInstance(application);
         Log.d(TAG, "Retrieving tasks from Database");
         imageDetails = db.imageDetailsDao().loadAllDetails();
     }
@@ -65,7 +70,57 @@ public class ImageDetailsRepository {
         });
     }
 
-    private void updateImageStatusInDatabase(List<ImageUpdate> updates) {
+    private void updateImageStatusInDatabase(final List<ImageUpdate> updates) {
+        // Business Logic:
+        // if server has an image that's available but phone says in progress, update to complete
+        // if server has image that's missing but phone says complete, update to not on server
+
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+
+                List<ImageDetails> currentListOfImageDetails = db.imageDetailsDao().LoadAllDetailsNonLive();
+
+                Set<String> fileNamesInUpdate = getFileNameSet(updates);
+                //Stores the ImageDetail objects for any updated entry
+                List<ImageDetails> updatedDetails = new ArrayList<>();
+
+                for (ImageDetails details : currentListOfImageDetails) {
+
+                    if (details.getStatus() == ImageDetails.PROCESSING) {
+
+                        if (fileNamesInUpdate.contains(details.getImageName())) {
+                            details.setStatus(ImageDetails.COMPLETED);
+                            updatedDetails.add(details);
+                        }
+
+                    } else if (details.getStatus() == ImageDetails.COMPLETED) {
+
+                        if (!fileNamesInUpdate.contains(details.getImageName())) {
+                            details.setStatus(ImageDetails.MISSING);
+                            updatedDetails.add(details);
+                        }
+
+                    }
+                }
+                for (ImageDetails detail : updatedDetails) {
+                    db.imageDetailsDao().updateImageDetails(detail);
+                }
+            }
+        });
+
+
 
     }
+
+    // convert the list of updates to a set of file names for easy searching
+    private Set<String> getFileNameSet(List<ImageUpdate> updates) {
+        HashSet set = new HashSet();
+        for (ImageUpdate update : updates) {
+            set.add(update.getFileName());
+        }
+
+        return set;
+    }
+
 }

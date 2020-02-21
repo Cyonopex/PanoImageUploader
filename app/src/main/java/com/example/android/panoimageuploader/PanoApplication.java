@@ -8,7 +8,6 @@ import android.os.Build;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
 
-import net.gotev.uploadservice.UploadService;
 import net.gotev.uploadservice.UploadServiceConfig;
 import net.gotev.uploadservice.observer.request.RequestObserver;
 //import net.gotev.uploadservice.UploadServiceConfig;

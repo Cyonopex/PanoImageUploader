@@ -1,7 +1,7 @@
 package com.example.android.panoimageuploader;
 
 import android.content.Context;
-import android.util.Log;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,6 +72,13 @@ public class ImageDetailsAdapter extends RecyclerView.Adapter<ImageDetailsAdapte
                 String fail = holder.itemView.getContext().getString(R.string.upload_failed);
                 holder.mStatus.setText(fail);
                 holder.pg.setVisibility(View.INVISIBLE);
+                break;
+            case ImageDetails.MISSING:
+                String missing = holder.itemView.getContext().getString(R.string.missing);
+                holder.mStatus.setText(missing);
+                holder.pg.setVisibility(View.INVISIBLE);
+                holder.mFileNameText.setTextColor(Color.GRAY);
+                holder.mStatus.setTextColor(Color.GRAY);
                 break;
         }
     }

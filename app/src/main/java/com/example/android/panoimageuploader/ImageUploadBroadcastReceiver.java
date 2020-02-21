@@ -61,12 +61,12 @@ public class ImageUploadBroadcastReceiver implements RequestObserverDelegate {
 
     @Override
     public void onCompleted(Context context, UploadInfo uploadInfo) {
-        Log.e(TAG, "Upload process complete");
+        Log.d(TAG, "Upload process complete");
     }
 
     @Override
     public void onCompletedWhileNotObserving() {
-        Log.e(TAG, "Upload process complete while not observing");
+        Log.d(TAG, "Upload process complete while not observing");
     }
 
 }

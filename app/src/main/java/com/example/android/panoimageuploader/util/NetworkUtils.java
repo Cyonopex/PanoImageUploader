@@ -8,12 +8,6 @@ import androidx.preference.PreferenceManager;
 
 import com.example.android.panoimageuploader.R;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Scanner;
-
 public class NetworkUtils {
 
     public static final String LOCALHOST = "http://192.168.43.242:5000/upload";

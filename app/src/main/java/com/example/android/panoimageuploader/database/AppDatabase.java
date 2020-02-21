@@ -6,8 +6,12 @@ import android.util.Log;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
 
-@Database(entities = {ImageDetails.class}, version = 2, exportSchema = false)
+import com.example.android.panoimageuploader.util.Converters;
+
+@Database(entities = {ImageDetails.class}, version = 3, exportSchema = false)
+@TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String LOG_TAG = AppDatabase.class.getSimpleName();

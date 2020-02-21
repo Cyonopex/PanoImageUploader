@@ -16,6 +16,9 @@ public interface ImageDetailsDAO {
     @Query("SELECT * FROM imagedetails ORDER BY id desc")
     LiveData<List<ImageDetails>> loadAllDetails();
 
+    @Query("SELECT * FROM imagedetails ORDER BY id desc")
+    List<ImageDetails> LoadAllDetailsNonLive();
+
     @Insert
     void insertImageDetails(ImageDetails details);
 
@@ -30,4 +33,6 @@ public interface ImageDetailsDAO {
 
     @Query("SELECT * FROM imagedetails WHERE uploadUID = :uploadUID")
     ImageDetails loadImageDetailsByUid(String uploadUID);
+
+
 }

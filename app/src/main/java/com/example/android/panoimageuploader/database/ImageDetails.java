@@ -5,6 +5,8 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
+import java.util.Date;
+
 @Entity(tableName = "ImageDetails")
 public class ImageDetails {
 
@@ -12,6 +14,7 @@ public class ImageDetails {
     public final static int PROCESSING = 1;
     public final static int COMPLETED = 2;
     public final static int UPLOAD_FAILED = 3;
+    public final static int MISSING = 4;
 
     public int getId() {
         return id;
@@ -26,11 +29,16 @@ public class ImageDetails {
     private String imageName;
     private int status;
     private String uploadUID;
+    private Date dateTimeOfUpload;
+
+    public ImageDetails(int id, String imageName, int status, String uploadUID) {
+        this(imageName, status, uploadUID);
+        this.id = id;
+    }
 
     @Ignore
     public ImageDetails(String imageName, int status, String uploadUID) {
-        this.imageName = imageName;
-        this.status = status;
+        this(imageName, status);
         this.uploadUID = uploadUID;
     }
 
@@ -38,11 +46,7 @@ public class ImageDetails {
     public ImageDetails(String imageName, int status) {
         this.imageName = imageName;
         this.status = status;
-    }
-
-    public ImageDetails(int id, String imageName, int status, String uploadUID) {
-        this(imageName, status, uploadUID);
-        this.id = id;
+        dateTimeOfUpload = new Date();
     }
 
     public String getImageName() {
@@ -67,6 +71,14 @@ public class ImageDetails {
 
     public void setUploadUID(String uploadUID) {
         this.uploadUID = uploadUID;
+    }
+
+    public Date getDateTimeOfUpload() {
+        return dateTimeOfUpload;
+    }
+
+    public void setDateTimeOfUpload(Date dateTimeOfUpload) {
+        this.dateTimeOfUpload = dateTimeOfUpload;
     }
 
     @NonNull
