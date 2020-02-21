@@ -1,4 +1,4 @@
-package com.example.android.panoimageuploader;
+package com.example.android.panoimageuploader.util;
 
 /*
  * Copyright (C) 2017 The Android Open Source Project

@@ -6,12 +6,17 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.lifecycle.ProcessLifecycleOwner;
+
 import net.gotev.uploadservice.UploadService;
+import net.gotev.uploadservice.UploadServiceConfig;
+import net.gotev.uploadservice.observer.request.RequestObserver;
 //import net.gotev.uploadservice.UploadServiceConfig;
 
 public class PanoApplication extends Application {
 
     public static final String notificationChannelID = "TestChannel";
+    private static PanoApplication instance;
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT > 26) {
@@ -27,11 +32,18 @@ public class PanoApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        UploadService.NAMESPACE = BuildConfig.APPLICATION_ID;
+        instance = this;
+
         createNotificationChannel();
 
-        //UploadServiceConfig.initialize(
-        //        this, notificationChannelID, BuildConfig.DEBUG
-        //);
+        UploadServiceConfig.initialize(
+                this, notificationChannelID, BuildConfig.DEBUG
+        );
+
+        new RequestObserver(this, ProcessLifecycleOwner.get(), new ImageUploadBroadcastReceiver()).register();
+    }
+
+    public static Context getContext() {
+        return instance;
     }
 }

@@ -12,6 +12,7 @@ import android.os.Bundle;
 
 import com.example.android.panoimageuploader.database.AppDatabase;
 import com.example.android.panoimageuploader.database.ImageDetails;
+import com.example.android.panoimageuploader.util.AppExecutors;
 import com.example.android.panoimageuploader.util.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -36,12 +37,9 @@ import android.widget.Toast;
 
 //import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
 
-import net.gotev.uploadservice.MultipartUploadRequest;
-import net.gotev.uploadservice.UploadNotificationConfig;
-import net.gotev.uploadservice.UploadService;
+import net.gotev.uploadservice.protocols.multipart.MultipartUploadRequest;
 
 import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -54,12 +52,14 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     private ProgressBar imageSendProgressBar;
     private int PermissionRequest = 1;
     private int IntentRequest = 2;
+    private int pickReqCode = 3;
     private Bitmap bitmap;
     private ImageView imageViews[];
     private RecyclerView mRecyclerView;
     private ImageDetailsAdapter mAdapter;
     private static final String TAG = "MainActivity";
     private AppDatabase mDb;
+    ImageDetailsViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +72,8 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startImageIntentRequest();
+                viewModel.getImageUpdatesFromServer();
+                //startImageIntentRequest();
                 //Snackbar.make(view, NetworkUtils.getImagesUri(MainActivity.this).toString(), Snackbar.LENGTH_LONG)
                 //       .setAction("Action", null).show();
             }
@@ -131,10 +132,11 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE}, PermissionRequest);
             } else {
-                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                photoPickerIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                photoPickerIntent.setType("image/");
-                startActivityForResult(photoPickerIntent, IntentRequest);
+                //Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                //photoPickerIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                //photoPickerIntent.setType("image/");
+                //startActivityForResult(photoPickerIntent, IntentRequest);
+                pickFile();
 
             }
         } catch (Exception e) {
@@ -147,18 +149,23 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PermissionRequest) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                photoPickerIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                photoPickerIntent.setType("image/");
-                startActivityForResult(photoPickerIntent, IntentRequest);
+                pickFile();
             }
         }
+    }
+
+    private void pickFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        startActivityForResult(intent, pickReqCode);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == IntentRequest) {
+        if(requestCode == pickReqCode) {
 
             Log.d(TAG, "User has made Intent Request for photo picker");
 
@@ -169,13 +176,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                 Log.d(TAG, "Result of photopicker intent Result OK");
 
                 if(data.getClipData() != null) {
-                    //int count = data.getClipData().getItemCount(); //evaluate the count before the for loop --- otherwise, the count is evaluated every loop.
 
-                    //for(int i = 0; i < count; i++) {
-                    //Uri imageUri = data.getClipData().getItemAt(i).getUri();
-
-                    //   Log.e(TAG, "MultiImage URI = " + imageUri.toString());
-                    //   imageUris.add(imageUri);
                     int count = data.getClipData().getItemCount();
                     for (int i=0; i < count; i++) {
                         ClipData.Item item = data.getClipData().getItemAt(i);
@@ -206,30 +207,29 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                 uploadImage(imageUris);
             }
             //else do nothing if user does not select any files
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
     private void uploadImage(List<Uri> imagePath) {
 
-        Log.e(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
+        Log.d(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
 
         final String fileName = imagePath.get(0).getLastPathSegment();
         final String uploadUuid = UUID.randomUUID().toString(); // Keep track of uploads
 
         try {
-            MultipartUploadRequest req = new MultipartUploadRequest(this, uploadUuid,
+            MultipartUploadRequest req = new MultipartUploadRequest(this,
                     NetworkUtils.getUploadUri(this).toString())
                     .setMethod("POST")
-                    //.addFileToUpload(imagePath.getPath(), "image")
-                    //.setNotificationConfig(new UploadNotificationConfig())
-                    .setNotificationConfig(new UploadNotificationConfig())
+                    .setUploadID(uploadUuid)
                     .setMaxRetries(1);
 
             for (Uri uri : imagePath) {
-                Log.e(TAG, "Uploading file: " + uri.getPath());
+                Log.d(TAG, "Adding file: " + uri.getPath());
                 req.addFileToUpload(uri.getPath(), "files[]");
             }
-
 
             req.startUpload();
 
@@ -237,9 +237,6 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
             e.printStackTrace();
             Log.e(TAG, "Unable to upload file");
             Toast.makeText(this, "Unable to upload file", Toast.LENGTH_LONG).show();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            Log.e(TAG, "URL is malformed or invalid");
         }
 
         AppExecutors.getInstance().diskIO().execute(new Runnable() {
@@ -270,24 +267,14 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         return path;
     }
 
-    public void setLoading() {
-        imageSendProgressBar.setVisibility(View.VISIBLE);
-        tv.setVisibility(View.INVISIBLE);
-    }
-
-    public void setFinished() {
-        imageSendProgressBar.setVisibility(View.INVISIBLE);
-        tv.setVisibility(View.VISIBLE);
-    }
-
     @Override
     public void onClick(String imageName) {
-        Log.e(TAG, UploadService.NAMESPACE);
+
     }
 
     private void setupViewModel() {
 
-        ImageDetailsViewModel viewModel = ViewModelProviders.of(this)
+        viewModel = ViewModelProviders.of(this)
                 .get(ImageDetailsViewModel.class);
 
         viewModel.getImageDetails().observe(this, new Observer<List<ImageDetails>>() {
@@ -297,6 +284,5 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                 mAdapter.setImageData(imageDetails);
             }
         });
-
     }
 }

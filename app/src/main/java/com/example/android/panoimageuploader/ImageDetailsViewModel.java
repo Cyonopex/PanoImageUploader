@@ -7,8 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
-import com.example.android.panoimageuploader.database.AppDatabase;
 import com.example.android.panoimageuploader.database.ImageDetails;
+import com.example.android.panoimageuploader.database.ImageDetailsRepository;
 
 import java.util.List;
 
@@ -16,17 +16,18 @@ public class ImageDetailsViewModel extends AndroidViewModel {
 
     private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
 
-    private LiveData<List<ImageDetails>> imageDetails;
+    private ImageDetailsRepository idRepo;
 
     public ImageDetailsViewModel(@NonNull Application application) {
         super(application);
-
-        AppDatabase db = AppDatabase.getInstance(this.getApplication());
-        Log.d(TAG, "Retrieving tasks from Database");
-        imageDetails = db.imageDetailsDao().loadAllDetails();
+        idRepo = new ImageDetailsRepository(application);
     }
 
     public LiveData<List<ImageDetails>> getImageDetails() {
-        return imageDetails;
+        return idRepo.getImageDetails();
+    }
+
+    public void getImageUpdatesFromServer() {
+        idRepo.getImageUpdateFromServer();
     }
 }

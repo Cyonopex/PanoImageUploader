@@ -19,7 +19,7 @@ android {
     }
     useLibrary 'org.apache.http.legacy'
 }
-def uploadServiceVersion = "3.5.2"
+def uploadServiceVersion = "4.1.0"
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.0.2'
