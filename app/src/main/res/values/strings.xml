@@ -10,7 +10,8 @@
     <!-- Network Preferences -->
     <string name="ip_title">Server URL</string>
     <string name="ip_key" translatable="false">uploadUrl</string>
-    <string name="ip_default" translatable="false">192.168.43.242:5000</string>
+    <string name="ip_default" translatable="false">192.168.1.64</string>
+    <string name="port_default" translatable="false">:5000</string>
 
     <string name="uploading">Uploading</string>
     <string name="processing">Processing</string>

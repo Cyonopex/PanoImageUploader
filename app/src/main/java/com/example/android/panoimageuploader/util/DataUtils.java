@@ -20,21 +20,6 @@ public class DataUtils {
 
     private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
 
-    public static List<ImageDetails> getDummyData() {
-
-        ArrayList<ImageDetails> list = new ArrayList<>();
-
-        list.add(new ImageDetails("Incomplete.jpg", ImageDetails.PROCESSING));
-
-        for (int i=0; i < 20; i++) {
-            String imageName = "Test "+ i + ".jpg";
-            ImageDetails a = new ImageDetails(imageName, ImageDetails.COMPLETED);
-            list.add(a);
-        }
-
-        return list;
-    }
-
     // Master method to convert content:// URIs into full file paths
     public static String getFilePath(Context context, Uri uri) {
         String selection = null;

@@ -87,21 +87,33 @@ public class ImageDetailsRepository {
 
                 for (ImageDetails details : currentListOfImageDetails) {
 
-                    if (details.getStatus() == ImageDetails.PROCESSING) {
 
-                        if (fileNamesInUpdate.contains(details.getImageName())) {
-                            details.setStatus(ImageDetails.COMPLETED);
-                            updatedDetails.add(details);
-                        }
 
-                    } else if (details.getStatus() == ImageDetails.COMPLETED) {
+                    if (details.getStatus() == ImageDetails.PROCESSING ||
+                            details.getStatus() == ImageDetails.COMPLETED) {
 
-                        if (!fileNamesInUpdate.contains(details.getImageName())) {
-                            details.setStatus(ImageDetails.MISSING);
-                            updatedDetails.add(details);
+                        String imageName = details.getImageName();
+                        String imageNameWithoutExtension = imageName
+                                .substring(0, imageName.lastIndexOf('.'));
+
+                        if (details.getStatus() == ImageDetails.PROCESSING) {
+
+                            if (fileNamesInUpdate.contains(imageNameWithoutExtension)) {
+                                details.setStatus(ImageDetails.COMPLETED);
+                                updatedDetails.add(details);
+                            }
+
+                        } else if (details.getStatus() == ImageDetails.COMPLETED) {
+
+                            if (!fileNamesInUpdate.contains(imageNameWithoutExtension)) {
+                                details.setStatus(ImageDetails.MISSING);
+                                updatedDetails.add(details);
+                            }
+
                         }
 
                     }
+
                 }
                 for (ImageDetails detail : updatedDetails) {
                     db.imageDetailsDao().updateImageDetails(detail);
@@ -117,7 +129,9 @@ public class ImageDetailsRepository {
     private Set<String> getFileNameSet(List<ImageUpdate> updates) {
         HashSet set = new HashSet();
         for (ImageUpdate update : updates) {
-            set.add(update.getFileName());
+            String str = update.getFileName();
+            str = str.substring(0, str.lastIndexOf('.'));
+            set.add(str);
         }
 
         return set;

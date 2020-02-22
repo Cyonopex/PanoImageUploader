@@ -10,12 +10,12 @@ import com.example.android.panoimageuploader.R;
 
 public class NetworkUtils {
 
-    public static final String LOCALHOST = "http://192.168.43.242:5000/upload";
-
     public static Uri getBaseUri(Context context) {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String baseUri = sp.getString(context.getString(R.string.ip_key),
                 context.getString(R.string.ip_default));
+
+        baseUri = baseUri + context.getString(R.string.port_default);
 
         Uri.Builder builder = new Uri.Builder();
         Uri finalUri = builder.scheme("http").encodedAuthority(baseUri).build();
@@ -27,8 +27,4 @@ public class NetworkUtils {
         return baseUri.buildUpon().appendPath("upload").build();
     }
 
-    public static Uri getImagesUri(Context context) {
-        Uri baseUri = getBaseUri(context);
-        return baseUri.buildUpon().appendPath("images").build();
-    }
 }

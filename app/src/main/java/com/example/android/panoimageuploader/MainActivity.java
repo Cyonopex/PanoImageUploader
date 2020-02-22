@@ -182,12 +182,12 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
                     Uri imagePath = data.getData();
 
-                    Log.e(TAG, "@@@@@@@@@@@@ Single Image URI = " + imagePath.toString());
+                    Log.d(TAG, "Single Image URI = " + imagePath.toString());
                     //String path = getFilePath(imagePath);
                     String path = DataUtils.getFilePath(this, imagePath);
                     Log.d(TAG, path);
 
-                    Log.e(TAG, "@@@@@@@@@@@@ After conversion = " + path.toString());
+                    Log.d(TAG, "After conversion = " + path.toString());
 
                     imageUris.add(Uri.parse(path));
                 }

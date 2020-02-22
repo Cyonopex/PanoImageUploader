@@ -1,6 +1,10 @@
 package com.example.android.panoimageuploader;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import com.example.android.panoimageuploader.database.AppDatabase;
@@ -22,7 +26,7 @@ public class ImageUploadBroadcastReceiver implements RequestObserverDelegate {
 
     @Override
     public void onSuccess(Context context, UploadInfo uploadInfo, ServerResponse serverResponse) {
-        Log.d(TAG, "Image successfully uploaded");
+        Log.e(TAG, "Image successfully uploaded");
         final AppDatabase aDb = AppDatabase.getInstance(context);
         final String uuid = uploadInfo.getUploadId();
 
@@ -61,12 +65,13 @@ public class ImageUploadBroadcastReceiver implements RequestObserverDelegate {
 
     @Override
     public void onCompleted(Context context, UploadInfo uploadInfo) {
-        Log.d(TAG, "Upload process complete");
+        Log.e(TAG, "Upload process complete");
     }
 
     @Override
     public void onCompletedWhileNotObserving() {
-        Log.d(TAG, "Upload process complete while not observing");
+        Log.e(TAG, "Upload process complete while not observing");
     }
+
 
 }

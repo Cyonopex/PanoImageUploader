@@ -40,6 +40,7 @@ public class PanoApplication extends Application {
         );
 
         new RequestObserver(this, ProcessLifecycleOwner.get(), new ImageUploadBroadcastReceiver()).register();
+
     }
 
     public static Context getContext() {
