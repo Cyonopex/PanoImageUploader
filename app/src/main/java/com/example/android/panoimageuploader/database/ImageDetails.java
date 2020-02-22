@@ -1,6 +1,7 @@
 package com.example.android.panoimageuploader.database;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
@@ -15,6 +16,7 @@ public class ImageDetails {
     public final static int COMPLETED = 2;
     public final static int UPLOAD_FAILED = 3;
     public final static int MISSING = 4;
+    public final static int PROCESSING_FAILED = 5;
 
     public int getId() {
         return id;
@@ -31,22 +33,26 @@ public class ImageDetails {
     private String uploadUID;
     private Date dateTimeOfUpload;
 
-    public ImageDetails(int id, String imageName, int status, String uploadUID) {
-        this(imageName, status, uploadUID);
+    @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
+    private byte[] thumbnail;
+
+    public ImageDetails(int id, String imageName, int status, String uploadUID, byte[] thumbnail) {
+        this(imageName, status, uploadUID, thumbnail);
         this.id = id;
     }
 
     @Ignore
-    public ImageDetails(String imageName, int status, String uploadUID) {
-        this(imageName, status);
+    public ImageDetails(String imageName, int status, String uploadUID, byte[] thumbnail) {
+        this(imageName, status, thumbnail);
         this.uploadUID = uploadUID;
     }
 
     @Ignore
-    public ImageDetails(String imageName, int status) {
+    public ImageDetails(String imageName, int status, byte[] thumbnail) {
         this.imageName = imageName;
         this.status = status;
-        dateTimeOfUpload = new Date();
+        this.dateTimeOfUpload = new Date();
+        this.thumbnail = thumbnail;
     }
 
     public String getImageName() {
@@ -79,6 +85,14 @@ public class ImageDetails {
 
     public void setDateTimeOfUpload(Date dateTimeOfUpload) {
         this.dateTimeOfUpload = dateTimeOfUpload;
+    }
+
+    public byte[] getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(byte[] thumbnail) {
+        this.thumbnail = thumbnail;
     }
 
     @NonNull

@@ -9,15 +9,20 @@ import com.example.android.panoimageuploader.ImageDetailsViewModel;
 import com.example.android.panoimageuploader.util.AppExecutors;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class ImageDetailsRepository {
+
+    // Time in Minutes that image is allowed to process before timing out
+    private static final int PROCESSING_TIMEOUT = 5;
 
     private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
     private LiveData<List<ImageDetails>> imageDetails;
@@ -98,8 +103,13 @@ public class ImageDetailsRepository {
 
                         if (details.getStatus() == ImageDetails.PROCESSING) {
 
+                            Date currentDate = new Date();
+
                             if (fileNamesInUpdate.contains(imageNameWithoutExtension)) {
                                 details.setStatus(ImageDetails.COMPLETED);
+                                updatedDetails.add(details);
+                            } else if (getTimeElapsed(details.getDateTimeOfUpload()) > 5) {
+                                details.setStatus(ImageDetails.PROCESSING_FAILED);
                                 updatedDetails.add(details);
                             }
 
@@ -120,9 +130,6 @@ public class ImageDetailsRepository {
                 }
             }
         });
-
-
-
     }
 
     // convert the list of updates to a set of file names for easy searching
@@ -135,6 +142,13 @@ public class ImageDetailsRepository {
         }
 
         return set;
+    }
+
+    private long getTimeElapsed(Date date) {
+        Date currentDate = new Date();
+        long diffInMillisec = currentDate.getTime() - date.getTime();
+        long diff = TimeUnit.MINUTES.convert(diffInMillisec, TimeUnit.MILLISECONDS);
+        return diff;
     }
 
 }

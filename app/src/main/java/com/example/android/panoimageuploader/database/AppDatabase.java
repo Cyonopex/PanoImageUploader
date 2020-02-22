@@ -10,7 +10,7 @@ import androidx.room.TypeConverters;
 
 import com.example.android.panoimageuploader.util.Converters;
 
-@Database(entities = {ImageDetails.class}, version = 3, exportSchema = false)
+@Database(entities = {ImageDetails.class}, version = 4, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

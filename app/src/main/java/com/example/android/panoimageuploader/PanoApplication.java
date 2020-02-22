@@ -8,8 +8,8 @@ import android.os.Build;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
 
-import net.gotev.uploadservice.UploadServiceConfig;
-import net.gotev.uploadservice.observer.request.RequestObserver;
+import net.gotev.uploadservice.UploadService;
+
 //import net.gotev.uploadservice.UploadServiceConfig;
 
 public class PanoApplication extends Application {
@@ -33,13 +33,9 @@ public class PanoApplication extends Application {
 
         instance = this;
 
+        UploadService.NAMESPACE = BuildConfig.APPLICATION_ID;
+
         createNotificationChannel();
-
-        UploadServiceConfig.initialize(
-                this, notificationChannelID, BuildConfig.DEBUG
-        );
-
-        new RequestObserver(this, ProcessLifecycleOwner.get(), new ImageUploadBroadcastReceiver()).register();
 
     }
 

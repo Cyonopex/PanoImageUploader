@@ -1,10 +1,14 @@
 package com.example.android.panoimageuploader;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.Image;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -12,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android.panoimageuploader.database.ImageDetails;
+import com.example.android.panoimageuploader.util.DataUtils;
 
 import java.util.List;
 
@@ -80,6 +85,18 @@ public class ImageDetailsAdapter extends RecyclerView.Adapter<ImageDetailsAdapte
                 holder.mFileNameText.setTextColor(Color.GRAY);
                 holder.mStatus.setTextColor(Color.GRAY);
                 break;
+            case ImageDetails.PROCESSING_FAILED:
+                String pfail = holder.itemView.getContext().getString(R.string.processing_failed);
+                holder.mStatus.setText(pfail);
+                holder.pg.setVisibility(View.INVISIBLE);
+                break;
+        }
+        byte[] thumbnailBytes = details.getThumbnail();
+        if (thumbnailBytes != null) {
+            Bitmap thumbnail = DataUtils.getBitmapFromBytes(details.getThumbnail());
+            holder.img.setImageBitmap(thumbnail);
+        } else {
+            Log.e(TAG, "Thumbnail not found");
         }
     }
 
@@ -99,14 +116,16 @@ public class ImageDetailsAdapter extends RecyclerView.Adapter<ImageDetailsAdapte
         public final TextView mFileNameText;
         public final TextView mStatus;
         public final ProgressBar pg;
+        public final ImageView img;
 
         public DetailsViewHolder(View itemView) {
 
             super(itemView);
 
-            mFileNameText = (TextView) itemView.findViewById(R.id.fileNameTv);
-            mStatus = (TextView) itemView.findViewById(R.id.mStatus);
-            pg = (ProgressBar) itemView.findViewById(R.id.mProgbar);
+            mFileNameText = itemView.findViewById(R.id.fileNameTv);
+            mStatus = itemView.findViewById(R.id.mStatus);
+            pg = itemView.findViewById(R.id.mProgbar);
+            img = itemView.findViewById(R.id.mThumbnail);
 
             itemView.setOnClickListener(this);
         }
