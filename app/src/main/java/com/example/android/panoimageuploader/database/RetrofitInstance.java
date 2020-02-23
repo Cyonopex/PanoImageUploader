@@ -17,9 +17,13 @@ public class RetrofitInstance {
     }
 
     private static Retrofit retrofit = null;
+    private static String currIP = NetworkUtils.getBaseUri(PanoApplication.getContext()).toString();
 
     public static RestApiService getApiService() {
-        if (retrofit == null) {
+
+        String newIP = NetworkUtils.getBaseUri(PanoApplication.getContext()).toString();
+
+        if (retrofit == null || !currIP.equals(newIP)) {
             retrofit = new Retrofit
                     .Builder()
                     .baseUrl(NetworkUtils.getBaseUri(PanoApplication.getContext()).toString() + '/')
