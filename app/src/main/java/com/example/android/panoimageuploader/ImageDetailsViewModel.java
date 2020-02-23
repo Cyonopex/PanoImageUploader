@@ -1,6 +1,7 @@
 package com.example.android.panoimageuploader;
 
 import android.app.Application;
+import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
@@ -28,5 +29,9 @@ public class ImageDetailsViewModel extends AndroidViewModel {
 
     public void getImageUpdatesFromServer() {
         idRepo.getImageUpdateFromServer();
+    }
+
+    public void createNewImageDetail(final Uri imageUri, final String uploadUuid) {
+        idRepo.createNewImageDetail(imageUri, uploadUuid);
     }
 }

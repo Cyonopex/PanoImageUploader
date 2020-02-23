@@ -13,7 +13,9 @@
         android:layout_marginStart="0dp"
         android:layout_marginTop="0dp"
         android:padding="8dp"
-        android:text="defaultText"
+        android:text="filename.jpg"
+        android:textSize="16sp"
+        android:textStyle="bold"
         app:layout_constraintStart_toEndOf="@+id/mThumbnail"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -32,6 +34,7 @@
         android:layout_height="wrap_content"
         android:paddingBottom="8dp"
         android:paddingRight="16dp"
+        android:text="status"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

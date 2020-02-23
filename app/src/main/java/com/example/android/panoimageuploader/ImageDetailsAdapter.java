@@ -3,7 +3,6 @@ package com.example.android.panoimageuploader;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.media.Image;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +21,7 @@ import java.util.List;
 
 public class ImageDetailsAdapter extends RecyclerView.Adapter<ImageDetailsAdapter.DetailsViewHolder>{
 
-    private static final String TAG = "ImageDetailsAdapter";
+    private static final String TAG = ImageDetailsAdapter.class.getSimpleName();
     private List<ImageDetails> data;
 
     private final ImageDetailsAdapterOnClickHandler mClickHandler;

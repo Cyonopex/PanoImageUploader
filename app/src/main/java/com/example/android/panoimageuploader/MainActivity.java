@@ -3,24 +3,15 @@ package com.example.android.panoimageuploader;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.media.ExifInterface;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -32,9 +23,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.android.panoimageuploader.database.AppDatabase;
 import com.example.android.panoimageuploader.database.ImageDetails;
-import com.example.android.panoimageuploader.util.AppExecutors;
 import com.example.android.panoimageuploader.util.DataUtils;
 import com.example.android.panoimageuploader.util.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -43,11 +32,7 @@ import com.google.android.material.snackbar.Snackbar;
 import net.gotev.uploadservice.MultipartUploadRequest;
 import net.gotev.uploadservice.UploadNotificationConfig;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,18 +41,17 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements ImageDetailsAdapter.ImageDetailsAdapterOnClickHandler {
 
+    private static final int PermissionRequest = 1;
+    private static final int pickReqCode = 2;
+    private static final String TAG = MainActivity.class.getSimpleName();
 
-    private TextView tv;
-    private ProgressBar imageSendProgressBar;
-    private int PermissionRequest = 1;
-    private int pickReqCode = 3;
     private RecyclerView mRecyclerView;
     private ImageDetailsAdapter mAdapter;
     private View mainActivityParentView;
-    private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
-    private AppDatabase mDb;
     private ImageDetailsViewModel viewModel;
-    private ImageView mImageView;
+    private AppCompatActivity mainActivity = this;
+
+    private Thread refresherThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
         mainActivityParentView = findViewById(R.id.main_activity_parent_view);
         mRecyclerView = findViewById(R.id.image_list_rv);
-        mImageView = findViewById(R.id.imageViewTest);
 
         LinearLayoutManager layoutManager
                 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
@@ -95,9 +78,38 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         mAdapter = new ImageDetailsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
-        mDb = AppDatabase.getInstance(getApplicationContext());
-
         setupViewModel();
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        refresherThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    while(!refresherThread.isInterrupted()) {
+                        Thread.sleep(2000);
+                        viewModel.getImageUpdatesFromServer();
+                    }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Thread Interrupted");
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        // Refresher thread must be in OnResume/OnPause so that it won't run when activity is minimised
+        refresherThread.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        refresherThread.interrupt();
     }
 
     @Override
@@ -179,27 +191,47 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
                 if(data.getClipData() != null) {
 
+                    //Multiple image data is sent to the activity in ClipData
                     int count = data.getClipData().getItemCount();
                     for (int i=0; i < count; i++) {
                         ClipData.Item item = data.getClipData().getItemAt(i);
 
                         Uri uri = item.getUri();
-                        Log.e(TAG, "MultiImage URI = " + uri.toString());
+                        Log.d(TAG, "MultiImage URI = " + uri.toString());
 
-                        String path = DataUtils.getFilePath(this, uri);
+                        String path;
+                        try {
+                            path = DataUtils.getFilePath(this, uri);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Content provider URI given is unsupported");
+                            Toast.makeText(this, getString(R.string.bad_contentprovider),
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
                         Log.d(TAG, path);
 
                         imageUris.add(Uri.parse(path));
-                        //imageUris.add(uri);
 
                     }
 
                 } else if(data.getData() != null) {
 
+                    //Single image data is sent to activity in normal .getData method
                     Uri imagePath = data.getData();
 
                     Log.e(TAG, "Single Image URI = " + imagePath.toString());
-                    String path = DataUtils.getFilePath(this, imagePath);
+
+                    String path;
+                    try {
+                        path = DataUtils.getFilePath(this, imagePath);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Content provider URI given is unsupported");
+                        Toast.makeText(this, getString(R.string.bad_contentprovider),
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
                     Log.d(TAG, path);
 
                     Log.d(TAG, "After conversion = " + path.toString());
@@ -223,15 +255,13 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
 
 
-    private void uploadImage(final List<Uri> imagePath) {
+    private void uploadImage(List<Uri> imagePath) {
 
         Log.d(TAG, "Uploading to " + NetworkUtils.getUploadUri(this));
 
-        final String fileName = imagePath.get(0).getLastPathSegment();
+        String uploadUuid = UUID.randomUUID().toString(); // Keep track of uploads
 
-        final String uploadUuid = UUID.randomUUID().toString(); // Keep track of uploads
-
-        Log.e(TAG, NetworkUtils.getUploadUri(this).toString());
+        String fileName = imagePath.get(0).getLastPathSegment();
 
         try {
             UploadNotificationConfig config = new UploadNotificationConfig();
@@ -241,7 +271,8 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                     NetworkUtils.getUploadUri(this).toString())
                     .setMethod("POST")
                     .setNotificationConfig(config)
-                    .setMaxRetries(1);
+                    .setMaxRetries(1)
+                    .addParameter("fileName", fileName);
 
 
             for (Uri uri : imagePath) {
@@ -251,28 +282,19 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
 
             req.startUpload();
 
-        } catch (FileNotFoundException | MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
-            Log.e(TAG, "Unable to upload file");
-            Toast.makeText(this, "Unable to upload file", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "URL invalid");
+            Toast.makeText(this, getString(R.string.bad_url), Toast.LENGTH_LONG).show();
+            return;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Log.e(TAG, "File not found");
+            Toast.makeText(this, getString(R.string.file_not_found), Toast.LENGTH_LONG).show();
+            return;
         }
 
-        AppExecutors.getInstance().diskIO().execute(new Runnable() {
-            @Override
-            public void run() {
-
-                Bitmap bitmap = DataUtils.createThumbnail(imagePath.get(0));
-                byte[] bytes;
-                if (bitmap != null) {
-                    bytes = DataUtils.getBytesFromBitmap(bitmap);
-                } else {
-                    bytes = null;
-                }
-
-                ImageDetails details = new ImageDetails(fileName, ImageDetails.UPLOADING, uploadUuid, bytes);
-                mDb.imageDetailsDao().insertImageDetails(details);
-            }
-        });
+        viewModel.createNewImageDetail(imagePath.get(0), uploadUuid);
     }
 
 
@@ -295,4 +317,5 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
             }
         });
     }
+
 }

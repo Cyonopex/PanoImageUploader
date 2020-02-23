@@ -6,8 +6,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.lifecycle.ProcessLifecycleOwner;
-
 import net.gotev.uploadservice.UploadService;
 
 //import net.gotev.uploadservice.UploadServiceConfig;

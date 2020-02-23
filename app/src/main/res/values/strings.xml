@@ -17,10 +17,13 @@
     <string name="processing">Processing</string>
     <string name="complete">Complete</string>
     <string name="upload_failed">Upload Failed</string>
-    <string name="missing">Completed</string>
+    <string name="missing">File not on server</string>
     <string name="processing_failed">Server unable to process image</string>
 
     <string name="error_one_image">Please select multiple images\n
         Long press images to select multiple</string>
+    <string name="bad_url">IP address is invalid. Please set a proper IP address in settings.</string>
+    <string name="bad_contentprovider">Uploading images from this image picker is unsupported.</string>
+    <string name="file_not_found">File not found in system.</string>
 
 </resources>

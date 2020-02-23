@@ -14,17 +14,12 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.example.android.panoimageuploader.ImageDetailsViewModel;
-import com.example.android.panoimageuploader.database.ImageDetails;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DataUtils {
 
-    private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
+    private static final String TAG = DataUtils.class.getSimpleName();
 
     // Master method to convert content:// URIs into full file paths
     public static String getFilePath(Context context, Uri uri) {
@@ -82,24 +77,24 @@ public class DataUtils {
         return null;
     }
 
-    public static boolean isExternalStorageDocument(Uri uri) {
+    private static boolean isExternalStorageDocument(Uri uri) {
         return "com.android.externalstorage.documents".equals(uri.getAuthority());
     }
 
-    public static boolean isDownloadsDocument(Uri uri) {
+    private static boolean isDownloadsDocument(Uri uri) {
         return "com.android.providers.downloads.documents".equals(uri.getAuthority());
     }
 
-    public static boolean isMediaDocument(Uri uri) {
+    private static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
     }
 
-    public static boolean isGooglePhotosUri(Uri uri) {
+    private static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
 
-    public static String getPathFromExternalContentProvider(Context context, Uri uri) {
+    private static String getPathFromExternalContentProvider(Context context, Uri uri) {
         String filePath = "";
 
         // ExternalStorageProvider
@@ -124,7 +119,7 @@ public class DataUtils {
         }
     }
 
-    public static String getPathFromDownloadContentProvider(Context context, Uri uri) {
+    private static String getPathFromDownloadContentProvider(Context context, Uri uri) {
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
         cursor.moveToFirst();
         String document_id = cursor.getString(0);
@@ -165,7 +160,7 @@ public class DataUtils {
         return null;
     }
 
-    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+    private static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
         Matrix matrix = new Matrix();
         switch (orientation) {
             case ExifInterface.ORIENTATION_NORMAL:

@@ -1,12 +1,14 @@
 package com.example.android.panoimageuploader.database;
 
 import android.app.Application;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
-import com.example.android.panoimageuploader.ImageDetailsViewModel;
 import com.example.android.panoimageuploader.util.AppExecutors;
+import com.example.android.panoimageuploader.util.DataUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,7 +26,7 @@ public class ImageDetailsRepository {
     // Time in Minutes that image is allowed to process before timing out
     private static final int PROCESSING_TIMEOUT = 5;
 
-    private static final String TAG = ImageDetailsViewModel.class.getSimpleName();
+    private static final String TAG = ImageDetailsRepository.class.getSimpleName();
     private LiveData<List<ImageDetails>> imageDetails;
     private Application application;
     private AppDatabase db;
@@ -108,7 +110,7 @@ public class ImageDetailsRepository {
                             if (fileNamesInUpdate.contains(imageNameWithoutExtension)) {
                                 details.setStatus(ImageDetails.COMPLETED);
                                 updatedDetails.add(details);
-                            } else if (getTimeElapsed(details.getDateTimeOfUpload()) > 5) {
+                            } else if (getTimeElapsed(details.getDateTimeOfUpload()) > PROCESSING_TIMEOUT) {
                                 details.setStatus(ImageDetails.PROCESSING_FAILED);
                                 updatedDetails.add(details);
                             }
@@ -149,6 +151,28 @@ public class ImageDetailsRepository {
         long diffInMillisec = currentDate.getTime() - date.getTime();
         long diff = TimeUnit.MINUTES.convert(diffInMillisec, TimeUnit.MILLISECONDS);
         return diff;
+    }
+
+    public void createNewImageDetail(final Uri imageUri, final String uploadUuid) {
+
+        final String fileName = imageUri.getLastPathSegment();
+
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+
+                Bitmap bitmap = DataUtils.createThumbnail(imageUri);
+                byte[] bytes;
+                if (bitmap != null) {
+                    bytes = DataUtils.getBytesFromBitmap(bitmap);
+                } else {
+                    bytes = null;
+                }
+
+                ImageDetails details = new ImageDetails(fileName, ImageDetails.UPLOADING, uploadUuid, bytes);
+                db.imageDetailsDao().insertImageDetails(details);
+            }
+        });
     }
 
 }
