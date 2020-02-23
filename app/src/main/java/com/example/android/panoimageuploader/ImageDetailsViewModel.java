@@ -34,4 +34,13 @@ public class ImageDetailsViewModel extends AndroidViewModel {
     public void createNewImageDetail(final Uri imageUri, final String uploadUuid) {
         idRepo.createNewImageDetail(imageUri, uploadUuid);
     }
+
+    public void addImageDetail(ImageDetails detail) {
+        idRepo.addImageDetails(detail);
+    }
+
+    public void removeImageDetails(ImageDetails detail) {
+        idRepo.removeImageDetails(detail);
+    }
+
 }

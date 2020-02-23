@@ -6,6 +6,8 @@ import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +22,9 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,6 +36,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import net.gotev.uploadservice.MultipartUploadRequest;
 import net.gotev.uploadservice.UploadNotificationConfig;
+import net.gotev.uploadservice.UploadService;
 
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -39,7 +45,7 @@ import java.util.List;
 import java.util.UUID;
 
 
-public class MainActivity extends AppCompatActivity implements ImageDetailsAdapter.ImageDetailsAdapterOnClickHandler {
+public class MainActivity extends AppCompatActivity implements ImageDetailsAdapter.ImageDetailsAdapterOnClickHandler, ImageDetailTouchHelper.ImageDetailTouchHelperListener {
 
     private static final int PermissionRequest = 1;
     private static final int pickReqCode = 2;
@@ -75,11 +81,57 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
                 = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        DividerItemDecoration div = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+        mRecyclerView.addItemDecoration(div);
         mAdapter = new ImageDetailsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
+        ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ImageDetailTouchHelper(0, ItemTouchHelper.LEFT, this);
+        new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(mRecyclerView);
+
         setupViewModel();
 
+    }
+
+    @Override
+    public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction, int position) {
+
+        if (viewHolder instanceof ImageDetailsAdapter.DetailsViewHolder) {
+
+            List<ImageDetails> imageDetails = mAdapter.getData();
+
+            final int itemPosition = viewHolder.getAdapterPosition();
+            final ImageDetails detailToBeDeleted = imageDetails.get(itemPosition);
+
+            // cancel upload
+            String uuid = detailToBeDeleted.getUploadUID();
+            UploadService.stopUpload(uuid);
+
+            viewModel.removeImageDetails(detailToBeDeleted);
+
+            String snackBarString;
+            if (detailToBeDeleted.getStatus() == ImageDetails.UPLOADING) {
+                snackBarString = getString(R.string.upload_canceled);
+            } else {
+                snackBarString = getString(R.string.image_removed);
+            }
+
+
+            Snackbar snackbar = Snackbar.make(mainActivityParentView, snackBarString, Snackbar.LENGTH_LONG);
+
+            if (detailToBeDeleted.getStatus() != ImageDetails.UPLOADING) {
+                snackbar.setAction(getString(R.string.undo), new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        viewModel.addImageDetail(detailToBeDeleted);
+                    }
+                });
+            }
+
+            snackbar.setActionTextColor(Color.YELLOW);
+            snackbar.show();
+        }
     }
 
     @Override
@@ -317,5 +369,7 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
             }
         });
     }
+
+
 
 }

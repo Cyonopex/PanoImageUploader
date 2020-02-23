@@ -175,4 +175,22 @@ public class ImageDetailsRepository {
         });
     }
 
+    public void removeImageDetails(final ImageDetails details) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                db.imageDetailsDao().deleteImageDetails(details);
+            }
+        });
+    }
+
+    public void addImageDetails(final ImageDetails details) {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                db.imageDetailsDao().insertImageDetails(details);
+            }
+        });
+    }
+
 }

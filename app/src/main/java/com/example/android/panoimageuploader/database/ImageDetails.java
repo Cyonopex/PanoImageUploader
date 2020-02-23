@@ -1,11 +1,14 @@
 package com.example.android.panoimageuploader.database;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
+import java.util.Arrays;
 import java.util.Date;
 
 @Entity(tableName = "ImageDetails")
@@ -17,6 +20,8 @@ public class ImageDetails {
     public final static int UPLOAD_FAILED = 3;
     public final static int MISSING = 4;
     public final static int PROCESSING_FAILED = 5;
+
+    private final static int[] deletableStatuses = {0, 2, 3, 4, 5};
 
     public int getId() {
         return id;
@@ -93,6 +98,16 @@ public class ImageDetails {
 
     public void setThumbnail(byte[] thumbnail) {
         this.thumbnail = thumbnail;
+    }
+
+    public boolean isDeletable() {
+        for (int statuses : deletableStatuses) {
+            if (statuses == this.status) {
+                return true;
+            }
+        }
+        return false;
+
     }
 
     @NonNull

@@ -13,6 +13,7 @@
     <string name="ip_default" translatable="false">192.168.1.64</string>
     <string name="port_default" translatable="false">:5000</string>
 
+    <!-- Image States -->
     <string name="uploading">Uploading</string>
     <string name="processing">Processing</string>
     <string name="complete">Complete</string>
@@ -20,10 +21,18 @@
     <string name="missing">File not on server</string>
     <string name="processing_failed">Server unable to process image</string>
 
+    <!-- Error Messages -->
     <string name="error_one_image">Please select multiple images\n
         Long press images to select multiple</string>
     <string name="bad_url">IP address is invalid. Please set a proper IP address in settings.</string>
     <string name="bad_contentprovider">Uploading images from this image picker is unsupported.</string>
     <string name="file_not_found">File not found in system.</string>
+
+    <!-- Helper Messages -->
+    <string name="image_removed">Image removed!</string>
+    <string name="upload_canceled">Upload Cancelled!</string>
+    <string name="undo">UNDO</string>
+    <string name="delete">REMOVE\nIMAGE</string>
+    <string name="cancel">CANCEL\nUPLOAD</string>
 
 </resources>
