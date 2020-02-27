@@ -13,7 +13,7 @@ import java.util.List;
 @Dao
 public interface ImageDetailsDAO {
 
-    @Query("SELECT * FROM imagedetails ORDER BY id desc")
+    @Query("SELECT * FROM imagedetails ORDER BY status asc, id desc")
     LiveData<List<ImageDetails>> loadAllDetails();
 
     @Query("SELECT * FROM imagedetails ORDER BY id desc")

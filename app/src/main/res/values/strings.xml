@@ -20,6 +20,7 @@
     <string name="upload_failed">Upload Failed</string>
     <string name="missing">File not on server</string>
     <string name="processing_failed">Server unable to process image</string>
+    <string name="failed_header">Failed</string>
 
     <!-- Error Messages -->
     <string name="error_one_image">Please select multiple images\n

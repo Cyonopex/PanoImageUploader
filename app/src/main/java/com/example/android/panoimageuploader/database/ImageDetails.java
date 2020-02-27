@@ -17,11 +17,11 @@ public class ImageDetails {
     public final static int UPLOADING = 0;
     public final static int PROCESSING = 1;
     public final static int COMPLETED = 2;
-    public final static int UPLOAD_FAILED = 3;
-    public final static int MISSING = 4;
+    public final static int MISSING = 3;
+    public final static int UPLOAD_FAILED = 4;
     public final static int PROCESSING_FAILED = 5;
 
-    private final static int[] deletableStatuses = {0, 2, 3, 4, 5};
+    private final static int[] deletableStatuses = {UPLOADING, COMPLETED, MISSING, UPLOAD_FAILED, PROCESSING_FAILED};
 
     public int getId() {
         return id;

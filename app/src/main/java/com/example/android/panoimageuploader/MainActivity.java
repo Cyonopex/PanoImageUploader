@@ -82,8 +82,8 @@ public class MainActivity extends AppCompatActivity implements ImageDetailsAdapt
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        DividerItemDecoration div = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
-        mRecyclerView.addItemDecoration(div);
+        //DividerItemDecoration div = new DividerItemDecoration(this, DividerItemDecoration.VERTICAL);
+        //mRecyclerView.addItemDecoration(div);
         mAdapter = new ImageDetailsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 

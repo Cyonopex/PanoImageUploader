@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
+import androidx.appcompat.app.AppCompatDelegate;
+
 import net.gotev.uploadservice.UploadService;
 
 //import net.gotev.uploadservice.UploadServiceConfig;
@@ -34,6 +36,8 @@ public class PanoApplication extends Application {
         UploadService.NAMESPACE = BuildConfig.APPLICATION_ID;
 
         createNotificationChannel();
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
 
     }
 
